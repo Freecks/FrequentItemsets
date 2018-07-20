@@ -1,9 +1,9 @@
-package others;
+package stage.leo;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
 
-public class PartitionKIter extends Partitioner<Text,Text>{
+public class PartitionSecIter extends Partitioner<Text,Text>{
 	private String str;
 	private int num;
 	
@@ -17,5 +17,4 @@ public class PartitionKIter extends Partitioner<Text,Text>{
 		else
 			return numReduceTasks-1 - (num%numReduceTasks);
 	}
-
 }

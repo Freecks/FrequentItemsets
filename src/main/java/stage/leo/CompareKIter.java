@@ -1,4 +1,4 @@
-package others;
+package stage.leo;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
@@ -16,10 +16,10 @@ public class CompareKIter extends WritableComparator {
 	public int compare(WritableComparable w1, WritableComparable w2) {
 		key1 = w1.toString();
 		block1 = key1.substring(1, key1.indexOf('-'));
-		sub1 = key1.substring(key1.indexOf(':'));
+		sub1 = key1.substring(key1.indexOf(','));
 		key2 = w2.toString();
 		block2 = key2.substring(1, key2.indexOf('-'));
-		sub2 = key2.substring(key2.indexOf(':'));
+		sub2 = key2.substring(key2.indexOf(','));
 		
 		if(block1.equals(block2)){	//we compare keys first
 			if(sub1.equals(sub2)){

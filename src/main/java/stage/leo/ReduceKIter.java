@@ -1,19 +1,21 @@
-package reducers;
+package stage.leo;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.HashSet;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
+
 
 public class ReduceKIter extends Reducer<Text, Text, Text, Text> {
 	private int size, partition, sub, prefixA, prefixB;
 	private String out = " ", toKey, line, value;
 	private Text output = new Text(), keyout = new Text();
-	private List<String> toCompare;
+	private HashSet<String> toCompare;
 	private HashMap<String,String> listA;
 	private StringTokenizer tokenizer;
 	
@@ -21,7 +23,7 @@ public class ReduceKIter extends Reducer<Text, Text, Text, Text> {
 		
 		if(key.toString().contains("A")){	//for A flag : we store values
 			line = key.toString();
-			partition = Integer.parseInt(line.substring(line.indexOf('-')+1, line.indexOf(':')));
+			partition = Integer.parseInt(line.substring(line.indexOf('-')+1, line.indexOf(',')));
 			sub = Integer.parseInt(line.substring(line.indexOf(':')+1));
 			listA = new HashMap<String,String>();
 			for(Text val : values){	//we store keys and values separately
@@ -37,7 +39,7 @@ public class ReduceKIter extends Reducer<Text, Text, Text, Text> {
 					line = val.toString();
 					toKey = line.substring(0,line.indexOf('\t'));
 					line = line.substring(line.indexOf('\t')+1);
-					toCompare = new ArrayList<String>();
+					toCompare= new HashSet<String>();
 					tokenizer = new StringTokenizer(line);
 					while (tokenizer.hasMoreTokens()) {
 						toCompare.add(tokenizer.nextToken());	//items to intersect if we can join keys
@@ -47,36 +49,34 @@ public class ReduceKIter extends Reducer<Text, Text, Text, Text> {
 					
 					for(String tempKeyA : listA.keySet()){	//for each key of A block
 						prefixA = Integer.parseInt(tempKeyA.substring(0,tempKeyA.indexOf(',')));
-						if(tempKeyA.substring(tempKeyA.indexOf(','), tempKeyA.indexOf(':')).equals(toKey.substring(toKey.indexOf(','), toKey.indexOf(':')))){	//we only compare datas with same partition
-							line = key.toString();
-							if(prefixA < prefixB || Integer.parseInt(line.substring(line.indexOf('-')+1, line.indexOf(':'))) != partition){	//if we can join
-								size = 0;
-								line = listA.get(tempKeyA);
-								tokenizer = new StringTokenizer(line);
-								while (tokenizer.hasMoreTokens()) {
-									value = tokenizer.nextToken();
-									if(toCompare.contains(value) && !out.contains(" " + value + " ")){	//we keep the intersection of values
-										out+= value + " ";	//on l'ajoute à la sortie
-										if(value.indexOf('.') != -1)
-											size += Integer.parseInt(value.substring(value.indexOf(".")+1, value.length()));
-										else
-											size ++;
-									}
-								}
-								
-								if(size>0){	//if intersetion isn't empty
-									//we create the new itemset with it's size
-									if(prefixA > prefixB)
-										keyout.set(prefixB +  "," + tempKeyA + "-" + size);
+						line = key.toString();
+						if(prefixA < prefixB || Integer.parseInt(line.substring(line.indexOf('-')+1, line.indexOf(','))) != partition){	//if we can join
+							size = 0;
+							line = listA.get(tempKeyA);
+							tokenizer = new StringTokenizer(line);
+							while (tokenizer.hasMoreTokens()) {
+								value = tokenizer.nextToken();
+								if(toCompare.contains(value) && !out.contains(" " + value + " ")){	//we keep the intersection of values
+									out+= value + " ";	//on l'ajoute à la sortie
+									if(value.indexOf('.') != -1)
+										size += Integer.parseInt(value.substring(value.indexOf(".")+1, value.length()));
 									else
-										keyout.set(prefixA + "," + toKey + "-" + size);
-									output.set(out);							
-									context.write(keyout, output);
-									output.set("");
+										size ++;
 								}
-								out = " ";
-							}   				
-						}
+							}								
+							
+							if(size>0){	//if intersetion isn't empty
+								//we create the new itemset with it's size
+								if(prefixA > prefixB)
+									keyout.set(prefixB +  "," + tempKeyA + "-" + size);
+								else
+									keyout.set(prefixA + "," + toKey + "-" + size);
+								output.set(out);
+								context.write(keyout, output);
+								output.set("");
+							}
+							out = " ";
+						}   				
 					}
 				}
 			}
